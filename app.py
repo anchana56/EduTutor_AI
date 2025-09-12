@@ -2,20 +2,21 @@ import gradio as gr
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-# Load model and tokenizer
-model_name = "ibm-granite/granite-3.2.2b-instruct"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForCausalLM.from_pretrained(
-    model_name,
-    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,  # Corrected here
-    device_map="auto" if torch.cuda.is_available() else None
-)
+# Define your Hugging Face access token
+token = "<your_huggingface_token>"  # Replace with your token
+
+# Model name (update with the correct model name)
+model_name = "ibm-granite/granite-3.2b-instruct"  # Replace with the correct model
+
+# Load model and tokenizer with the token for private models
+tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=token)
+model = AutoModelForCausalLM.from_pretrained(model_name, use_auth_token=token)
 
 # Ensure padding token is set
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
-# Define response generation
+# Define response generation function
 def generate_response(prompt, max_length=512):
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_length)
     
