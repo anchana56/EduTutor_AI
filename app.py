@@ -2,25 +2,21 @@ import gradio as gr
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-# Define your Hugging Face access token
-token = "<your_huggingface_token>"  # Replace with your token
+# Load model and tokenizer
+model_name = "ibm-granite/granite-3.2b-instruct"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(
+    model_name,
+    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
+    device_map="auto"
+)
 
-# Model name (update with the correct model name)
-model_name = "ibm-granite/granite-3.2b-instruct"  # Replace with the correct model
-
-# Load model and tokenizer with the token for private models
-tokenizer = AutoTokenizer.from_pretrained(model_name, use_auth_token=token)
-model = AutoModelForCausalLM.from_pretrained(model_name, use_auth_token=token)
-
-# Ensure padding token is set
 if tokenizer.pad_token is None:
     tokenizer.pad_token = tokenizer.eos_token
 
-# Define response generation function
 def generate_response(prompt, max_length=512):
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=max_length)
-    
-    # Move tensors to the correct device if CUDA is available
+    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512)
+
     if torch.cuda.is_available():
         inputs = {k: v.to(model.device) for k, v in inputs.items()}
     
@@ -32,24 +28,22 @@ def generate_response(prompt, max_length=512):
             do_sample=True,
             pad_token_id=tokenizer.eos_token_id
         )
-    
+
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     response = response.replace(prompt, "").strip()
     return response
 
-# Define concept explanation function
 def concept_explanation(concept):
     prompt = f"Explain the concept of {concept} in detail with examples:"
     return generate_response(prompt, max_length=800)
 
-# Define quiz generator function
 def quiz_generator(concept):
     prompt = f"Generate 5 quiz questions about {concept} with different question types (multiple choice, true/false, short answer). At the end, provide all the answers in a separate ANSWERS section."
     return generate_response(prompt, max_length=1000)
 
 # Create Gradio interface
 with gr.Blocks() as app:
-    gr.Markdown("# Educational AI Assistant")
+    gr.Markdown("#  Educational AI Assistant")
     
     with gr.Tabs():
         with gr.TabItem("Concept Explanation"):
@@ -66,5 +60,4 @@ with gr.Blocks() as app:
             
             quiz_btn.click(quiz_generator, inputs=quiz_input, outputs=quiz_output)
 
-# Launch the app with sharing
 app.launch(share=True)
