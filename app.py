@@ -8,7 +8,7 @@ model_name = "ibm-granite/granite-3.2b-instruct"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(
     model_name,
-    torch_dtype=torch.float16 if torch.cuda.i5_available() else torch.float32,
+    torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32,
     device_map="auto" if torch.cuda.is_available() else None
 )
 
