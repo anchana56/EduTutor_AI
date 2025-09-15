@@ -1,7 +1,7 @@
 # ==============================
 # 1. Install Dependencies
 # ==============================
-!pip install torch transformers gradio -q
+
 
 # ==============================
 # 2. Import Libraries
